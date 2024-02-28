@@ -1,0 +1,6 @@
+*.dat
+*.pdf
+report/
+__pycache__
+
+

@@ -1,0 +1,117 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper, margin=3cm]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  language=Python,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+
+
+
+\title{Prisoner's Dilemma Implementations}
+\author{Giacomo Marcon}   
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\section{The Prisoner's Dilemma}
+
+\subsection{Classical formulation}
+Suppose two criminals are arrested and imprisoned. The police have enough evidence to convict them of a minor crime, but not enough to convict them of a major crime. The police question each prisoner separately in the hope of getting one to testify against the other. The prisoners are given the following choices:
+\begin{itemize}
+    \item If both prisoners confess (The two prisoners are \textit{defecting} with one another), each will serve 2 years in prison.
+    \item If one confesses and the other remains silent (One prisoner is \textit{cooperating} while the other is \textit{defecting}), the one who confesses will be set free and the other will serve 3 years in prison.
+    \item If both remain silent (The two prisoners are \textit{defecting}), each will serve 1 year in prison.
+\end{itemize}
+Assuming that the prisoners are rational and act in their own self-interest, the best strategy for each prisoner is to defect, regardless of the other prisoner's choice. However, the best outcome for the two prisoners together is to cooperate, which would result in a total of 2 years in prison. This is the classic statement of the \textit{Prisoner's dilemma}.
+
+\subsection{Many interactions case}
+An interesting alternative formulation of the Prisoner's Dilemma is the one in which the two prisoners are allowed to play the game multiple times. In this case, we define the \textit{strategy} $S$ of a player is a function that takes as input the opponent's previous moves ($\mathbf{x} \in \{C\}^M$ where $C=1$ collaborating and $C=0$ for defecting) and returns the next move.
+\begin{equation}
+    S_m: \{0,1\}^m \rightarrow \{0,1\}
+\end{equation}
+
+\section{Strategies}
+As previously stated, a strategy is a function that takes as input the opponent's previous moves (simply referred to as previous moves) and returns the next move.
+\begin{equation}
+    S_m: \{0,1\}^m \rightarrow \{0,1\}.
+\end{equation} 
+In the implementation we will assume that the number of moves $\hat{m}$ taken into account by the strategy is fixed smaller than the total number of previous moves $m>\hat{m}$. The single move $x$ $x = 1$ if the player cooperated and $C_x = 0$ if the player defected. This can be immediately be generalized (we will consider probabilistic moves later) by stating $x \in \mathbb{R}$ and the set of $\hat{m}$ previous moves as $\mathbf{x} \in \mathbb{R}^{\hat{m}}$ \\
+The initial moves will define a \textit{transient region}, in which an ad hoc strategy will be used. For the scope of this report, we will assume that the transient region is small enough (the strategy will have "short memory") to not need a deeper analysis. \\ 
+
+Different strategies have been proposed to play the game. These strategies will be compared in different competitions detailed in the following sections.
+
+Examples of strategies are:
+\begin{itemize}
+    \item \textit{Always defect:} This strategy will always defect, regardless of the opponent's move.
+    \item \textit{Always cooperate:} This strategy will always cooperate, regardless of the opponent's move.
+    \item \textit{An eye for an eye:} This strategy will start by cooperating and then will copy the opponent's previous move.
+    \item \textit{Probing:} This strategy will start by cooperating and then will randomly defect with a given probability, this probability will increase if the opponent cooperates and will decreas otherwise.
+    \item \textit{Random:} This strategy will randomly choose to cooperate or defect.
+\end{itemize}
+Note: in the \texttt{strategies.py} module all the strategies used in the notebooks are implemented
+
+\textit{Spoiler:} From literature, we know that the best strategies will have to be:
+\begin{itemize}
+    \item \textit{Nice:} It will never defect first.
+    \item \textit{Retaliating:} It will immediately defect if the opponent has defected previously.
+    \item \textit{Forgiving:} It will eventually cooperate if the opponent has cooperated.
+    \item \textit{Clear:} A predictable behaviour will tend to be better as the opponent will adapt more easily.
+\end{itemize}
+
+\section{Basic Competition}
+Given a set of strategies, we will compare them in a basic competition. The strategies will play matches against each other for a fixed number of moves and the winner will be the one with the highest cumulative score, after matches against each other strategy is played.
+
+A simple variation of this competition would be to randomly select the number of moves for each match (e.g. $N = \mathcal{N}(\mu, \sigma)$ where $\mu$ is set to be the previously fixed number of moves and $\sigma$ is a parameter that can be tuned).
+
+These Competitions are presented in the \texttt{basic\_competiton.ipynb} notebook. In the notebook also a basic exploration on competition parameters is carried out. The result of the notebook is indeed the fact that \textit{nice} strategies tend to do better (the first three are indeed nice) but the result is that the \texttt{grudge\_x} strategies are better than the \texttt{e4e} strategy (found to be the better one in literature (the veritasium video lol)). 
+
+\subsection{Strategie's parameters}
+From the first analysis emerges how a parametric analisys on the strategies that depend on parameters could be interesting, in particular for the \texttt{grudge\_x} strategy but also for the \texttt{probing\_x}
+
+\subsubsection{\texttt{grudge\_x}}
+The action function for this strategy: 
+
+\begin{lstlisting}[caption = {Action function for \texttt{grudge\_x}. If 0 is returned then the strategy is defecting and is cooperating otherwise. In the transition region this strategy is nice}]
+    def grudge_af(prevActions: np.array):
+    if np.sum(prevActions[1]) != np.shape(prevActions)[1]:
+        return np.array([0])
+    else:
+        return np.array([1])
+\end{lstlisting}
+note how as the memory of the strategy is increased this strategy will tend to get less and less forgiving while as the memory decreases this strategy gets more similar to the \texttt{e4e} strategy. \\
+The behaviour of this transition is studied in the notebook \texttt{strategy\_parameters.ipynb}
+
+\subsection{Characterization}
+
+\section{Evolution}
+
+\subsection{Without Mutations}
+
+\subsection{With Mutations}
+
+\end{document}
